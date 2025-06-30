@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Advanced File Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Light Theme */
+    .light .bg-gray-900 { background-color: #f9fafb; }
+    .light .bg-gray-800 { background-color: #ffffff; }
+    .light .bg-gray-700 { background-color: #f3f4f6; }
+    .light .text-gray-300 { color: #4b5563; }
+    .light .text-gray-400 { color: #6b7280; }
+    .light .placeholder-gray-400::placeholder { color: #9ca3af; }
+
+    /* Dark Theme */
+    .dark .bg-gray-900 { background-color: #111827; }
+    .dark .bg-gray-800 { background-color: #1f2937; }
+    .dark .bg-gray-700 { background-color: #374151; }
+    .dark .text-white { color: #ffffff; }
+    .dark .text-gray-300 { color: #d1d5db; }
+    .dark .text-gray-400 { color: #9ca3af; }
+    .dark .placeholder-gray-400::placeholder { color: #9ca3af; }
+  </style>
+</head>
+<body class="bg-gray-900 min-h-screen px-4 py-6 transition-colors duration-300">
+  <div class="max-w-3xl mx-auto bg-gray-800 p-6 rounded-lg shadow-lg">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-2xl font-bold">📁 Mini ISNIP IPB</h1>
+      <div class="flex items-center space-x-2 text-sm">
+        <span class="text-gray-400">Theme:</span>
+        <button onclick="setTheme('light')" class="text-gray-400 hover:text-white">Light</button>
+        <button onclick="setTheme('dark')" class="text-gray-400 hover:text-white">Dark</button>
+        <button onclick="setTheme('system')" class="text-gray-400 hover:text-white">System</button>
+      </div>
+    </div>
+
+    <form id="uploadForm" class="mb-6">
+      <label class="block mb-2 text-gray-300">Choose a file:</label>
+      <input type="file" id="fileInput" class="w-full text-sm text-gray-900 bg-gray-100 rounded p-2 mb-2">
+      <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+        <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+      </div>
+      <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">Upload</button>
+    </form>
+
+    <input type="text" id="searchInput" placeholder="Search files..." class="mb-4 w-full p-2 rounded bg-gray-700 text-white placeholder-gray-400">
+
+    <div class="flex justify-between items-center mb-2 text-sm text-gray-400">
+      <button onclick="sortFiles('name')">Sort by Name</button>
+      <button onclick="sortFiles('date')">Sort by Date</button>
+    </div>
+
+    <ul id="fileList" class="space-y-2 text-sm">
+      </ul>
+
+    <div id="filePreview" class="mt-6 hidden">
+      <h2 class="text-lg font-semibold mb-2">📄 File Preview</h2>
+      <pre id="previewContent" class="bg-gray-900 p-4 rounded overflow-x-auto max-h-64"></pre>
+    </div>
+  </div>
+
+  <script>
+    const uploadForm = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const progressBar = document.getElementById('progressBar');
+    const fileList = document.getElementById('fileList');
+    const searchInput = document.getElementById('searchInput');
+    const filePreview = document.getElementById('filePreview');
+    const previewContent = document.getElementById('previewContent');
+    let files = [];
+
+    // Theme Management
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function applyTheme(theme) {
+      if (theme === 'system') {
+        theme = prefersDark.matches ? 'dark' : 'light';
+      }
+      document.documentElement.className = theme;
+      
+      // Tentukan warna teks berdasarkan tema
+      const bodyTextColor = theme === 'light' ? 'text-gray-900' : 'text-white';
+
+      // Terapkan kelas ke body
+      document.body.className = `${theme} ${bodyTextColor} bg-gray-900 min-h-screen px-4 py-6 transition-colors duration-300`;
+    }
+
+    function setTheme(theme) {
+      localStorage.setItem('theme', theme);
+      applyTheme(theme);
+    }
+
+    prefersDark.addEventListener('change', () => {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'system') {
+        applyTheme('system');
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme') || 'system';
+      applyTheme(savedTheme);
+    });
+
+
+    uploadForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("file belum dimasukkan, silahkan coba lagi");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadstart = () => progressBar.style.width = '0%';
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const percent = (e.loaded / e.total) * 100;
+          progressBar.style.width = percent + '%';
+        }
+      };
+      reader.onload = () => {
+        const now = new Date();
+        const fileData = {
+          name: file.name,
+          date: now.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }),
+          content: reader.result
+        };
+        files.push(fileData);
+        updateFileList();
+        fileInput.value = '';
+        progressBar.style.width = '0%';
+      };
+      reader.readAsText(file, 'UTF-8');
+    });
+
+    searchInput.addEventListener('input', () => updateFileList());
+
+    function updateFileList() {
+      const query = searchInput.value.toLowerCase();
+      fileList.innerHTML = '';
+      files
+        .filter(f => f.name.toLowerCase().includes(query))
+        .forEach((file, index) => {
+          const li = document.createElement('li');
+          li.className = 'bg-gray-700 p-3 rounded flex justify-between items-center';
+          li.innerHTML = `
+            <div>
+              <p class="font-semibold">${file.name}</p>
+              <p class="text-xs text-gray-400">${file.date}</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="showPreview(${index})" class="text-blue-400 hover:underline text-sm">Preview</button>
+                <button onclick="renameFile(${index})" class="text-green-400 hover:underline text-sm">Rename</button>
+                <button onclick="deleteFile(${index})" class="text-red-400 hover:underline text-sm">Delete</button>
+            </div>
+          `;
+          fileList.appendChild(li);
+        });
+        
+      if (filePreview.classList.contains('hidden') === false) {
+          filePreview.classList.add('hidden');
+      }
+    }
+
+    function showPreview(index) {
+      previewContent.textContent = files[index].content;
+      filePreview.classList.remove('hidden');
+    }
+
+    function deleteFile(index) {
+        if (confirm(`Are you sure you want to delete ${files[index].name}?`)) {
+            files.splice(index, 1);
+            updateFileList();
+        }
+    }
+
+    function renameFile(index) {
+        const currentName = files[index].name;
+        const newName = prompt("Enter new file name:", currentName);
+        if (newName && newName.trim() !== '' && newName !== currentName) {
+            files[index].name = newName.trim();
+            updateFileList();
+        }
+    }
+
+    function sortFiles(key) {
+      if (key === 'name') {
+        files.sort((a, b) => a.name.localeCompare(b.name));
+      } else if (key === 'date') {
+        files.sort((a, b) => new Date(b.date) - new Date(a.date));
+      }
+      updateFileList();
+    }
+  </script>
+</body>
+</html>
