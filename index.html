@@ -27,11 +27,14 @@
   <div class="max-w-3xl mx-auto bg-gray-800 p-6 rounded-lg shadow-lg">
     <div class="flex justify-between items-center mb-4">
       <h1 class="text-2xl font-bold">📁 Mini ISNIP IPB</h1>
-      <div class="flex items-center space-x-2 text-sm">
+      <div class="flex items-center space-x-4 text-sm">
         <span class="text-gray-400">Theme:</span>
         <button onclick="setTheme('light')" class="text-gray-400 hover:text-white">Light</button>
         <button onclick="setTheme('dark')" class="text-gray-400 hover:text-white">Dark</button>
         <button onclick="setTheme('system')" class="text-gray-400 hover:text-white">System</button>
+        
+        <span class="text-gray-500">|</span>
+        <button onclick="logout()" class="font-semibold text-red-500 hover:text-red-400 hover:underline">Logout</button>
       </div>
     </div>
 
@@ -60,7 +63,31 @@
     </div>
   </div>
 
+  <footer class="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
+    <p>&copy; 2025 Kelompok 10 ISNIP.</p>
+    <p>Dibuat untuk Mata Kuliah Capstone 1 2024/2025.</p>
+    <p>Ilmu Komputer IPB.</p>
+  </footer>
+
   <script>
+    // --- Bagian Pengecekan Login & Inisialisasi ---
+    document.addEventListener('DOMContentLoaded', () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      if (isLoggedIn !== 'true') {
+        alert('Anda harus login terlebih dahulu!');
+        window.location.href = 'login.html';
+        return;
+      }
+      const savedTheme = localStorage.getItem('theme') || 'system';
+      applyTheme(savedTheme);
+    });
+
+    function logout() {
+      localStorage.removeItem('isLoggedIn');
+      window.location.href = 'login.html';
+    }
+
+    // --- Sisa Script File Manager ---
     const uploadForm = document.getElementById('uploadForm');
     const fileInput = document.getElementById('fileInput');
     const progressBar = document.getElementById('progressBar');
@@ -70,7 +97,6 @@
     const previewContent = document.getElementById('previewContent');
     let files = [];
 
-    // Theme Management
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
 
     function applyTheme(theme) {
@@ -78,11 +104,7 @@
         theme = prefersDark.matches ? 'dark' : 'light';
       }
       document.documentElement.className = theme;
-      
-      // Tentukan warna teks berdasarkan tema
       const bodyTextColor = theme === 'light' ? 'text-gray-900' : 'text-white';
-
-      // Terapkan kelas ke body
       document.body.className = `${theme} ${bodyTextColor} bg-gray-900 min-h-screen px-4 py-6 transition-colors duration-300`;
     }
 
@@ -90,19 +112,13 @@
       localStorage.setItem('theme', theme);
       applyTheme(theme);
     }
-
+    
     prefersDark.addEventListener('change', () => {
       const savedTheme = localStorage.getItem('theme');
       if (savedTheme === 'system') {
         applyTheme('system');
       }
     });
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const savedTheme = localStorage.getItem('theme') || 'system';
-      applyTheme(savedTheme);
-    });
-
 
     uploadForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -111,7 +127,6 @@
         alert("file belum dimasukkan, silahkan coba lagi");
         return;
       }
-
       const reader = new FileReader();
       reader.onloadstart = () => progressBar.style.width = '0%';
       reader.onprogress = (e) => {
@@ -151,7 +166,8 @@
               <p class="text-xs text-gray-400">${file.date}</p>
             </div>
             <div class="flex items-center space-x-3">
-                <button onclick="showPreview(${index})" class="text-blue-400 hover:underline text-sm">Preview</button>
+                <button onclick="downloadFile(${index})" class="text-blue-500 hover:underline text-sm">Download</button>
+                <button onclick="showPreview(${index})" class="text-indigo-400 hover:underline text-sm">Preview</button>
                 <button onclick="renameFile(${index})" class="text-green-400 hover:underline text-sm">Rename</button>
                 <button onclick="deleteFile(${index})" class="text-red-400 hover:underline text-sm">Delete</button>
             </div>
@@ -183,6 +199,19 @@
             files[index].name = newName.trim();
             updateFileList();
         }
+    }
+    
+    function downloadFile(index) {
+        const fileToDownload = files[index];
+        const blob = new Blob([fileToDownload.content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileToDownload.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
     function sortFiles(key) {
