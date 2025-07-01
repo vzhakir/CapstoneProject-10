@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini ISNIP IPB</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .light .bg-gray-900 { background-color: #f9fafb; }
+    .light .bg-gray-800 { background-color: #ffffff; }
+    .dark .bg-gray-900 { background-color: #111827; }
+    .dark .bg-gray-800 { background-color: #1f2937; }
+    .dark .text-white { color: #ffffff; }
+  </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen px-4 py-6 transition-colors duration-300">
+
+  <div class="max-w-3xl mx-auto bg-gray-800 p-6 rounded-lg shadow-lg">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-2xl font-bold">📁 Mini ISNIP IPB</h1>
+      <div class="flex items-center space-x-4 text-sm">
+        <button onclick="setTheme('light')" class="text-gray-400 hover:text-white">Light</button>
+        <button onclick="setTheme('dark')" class="text-gray-400 hover:text-white">Dark</button>
+        <button onclick="setTheme('system')" class="text-gray-400 hover:text-white">System</button>
+        <span class="text-gray-500">|</span>
+        <button onclick="logout()" class="font-semibold text-red-500 hover:text-red-400 hover:underline">Logout</button>
+      </div>
+    </div>
+
+    <form id="fakeForm">
+      <label class="block mb-2 text-gray-300">Upload a FASTQ file:</label>
+      <input type="file" id="fileInput" name="fastqfile" accept=".fastq" class="w-full text-sm text-gray-900 bg-gray-100 rounded p-2 mb-4">
+      <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded w-full">Run Bowtie</button>
+    </form>
+
+    <div id="statusMsg" class="text-green-400 mt-4 hidden">✅ Processing...</div>
+  </div>
+
+  <footer class="text-center py-8 text-sm text-gray-400">
+    <p>&copy; 2025 Kelompok 10 ISNIP. Capstone 1 – Ilmu Komputer IPB</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      if (isLoggedIn !== 'true') {
+        alert('Anda harus login terlebih dahulu!');
+        window.location.href = 'login.html';
+      }
+      applyTheme(localStorage.getItem('theme') || 'system');
+    });
+
+    function logout() {
+      localStorage.removeItem('isLoggedIn');
+      window.location.href = 'login.html';
+    }
+
+    function applyTheme(theme) {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+      if (theme === 'system') theme = prefersDark.matches ? 'dark' : 'light';
+      document.documentElement.className = theme;
+      const bodyText = theme === 'light' ? 'text-gray-900' : 'text-white';
+      document.body.className = `${theme} ${bodyText} bg-gray-900 text-white min-h-screen px-4 py-6 transition-colors duration-300`;
+    }
+
+    function setTheme(theme) {
+      localStorage.setItem('theme', theme);
+      applyTheme(theme);
+    }
+
+    // When the form is submitted, redirect to download.php
+    document.getElementById('fakeForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      document.getElementById('statusMsg').classList.remove('hidden');
+
+      // Simulate delay, then redirect to download.php to trigger forced download
+      setTimeout(() => {
+        window.location.href = 'download.php';
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
