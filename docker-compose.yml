@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: isnipweb.dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - ./CapstoneProject-10-main:/var/www/html
+
+  processor:
+    build:
+      context: .
+      dockerfile: isnipprocessor.dockerfile
+    volumes:
+      - ./CapstoneProject-10-main:/isnip/html
